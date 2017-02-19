@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <name>mycollab-app-community</name>
+    <artifactId>mycollab-app-community</artifactId>
+    <parent>
+        <groupId>com.mycollab</groupId>
+        <artifactId>mycollab-parent-community</artifactId>
+        <version>5.4.7</version>
+        <relativePath>../mycollab-parent-community/pom.xml</relativePath>
+    </parent>
+    <packaging>jar</packaging>
+    <properties>
+        <installer.staging.dir>${project.build.directory}/staging</installer.staging.dir>
+        <installer.resource.dir.app>${basedir}/src/main/installer-resources</installer.resource.dir.app>
+        <staging.dir.app>${installer.staging.dir}</staging.dir.app>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.mycollab</groupId>
+            <artifactId>mycollab-client-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.mycollab</groupId>
+            <artifactId>mycollab-server-runner</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.mycollab</groupId>
+                    <artifactId>mycollab-test</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.mycollab</groupId>
+            <artifactId>mycollab-servlet</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.mycollab</groupId>
+            <artifactId>mycollab-services-community</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.mycollab</groupId>
+            <artifactId>mycollab-scheduler-community</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.mycollab</groupId>
+            <artifactId>mycollab-mobile</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.mycollab</groupId>
+            <artifactId>mycollab-web-community</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlets</artifactId>
+            <version>${jettyVersion}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.vaadin.addons</groupId>
+            <artifactId>loginform</artifactId>
+            <version>0.6.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.vaadin</groupId>
+            <artifactId>vaadin-client-compiler</artifactId>
+            <version>${vaadinVersion}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.vaadin</groupId>
+                    <artifactId>vaadin-sass-compiler</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.vaadin.external.flute</groupId>
+                    <artifactId>flute</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.vaadin.external.streamhtmlparser</groupId>
+                    <artifactId>streamhtmlparser-jsilver</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.vaadin.external.google</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.validation</groupId>
+                    <artifactId>validation-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.w3c.css</groupId>
+                    <artifactId>sac</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>net.sourceforge.cssparser</groupId>
+                    <artifactId>cssparser</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>xml-apis</groupId>
+                    <artifactId>xml-apis</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.6</version>
+                <executions>
+                    <execution>
+                        <id>make-a-jar</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>com.mycollab.server.DefaultServerRunner</mainClass>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.10</version>
+                <configuration>
+                    <excludeTransitive>false</excludeTransitive>
+                    <useBaseVersion>true</useBaseVersion>
+                    <stripVersion>false</stripVersion>
+                    <overWriteReleases>true</overWriteReleases>
+                    <overWriteSnapshots>true</overWriteSnapshots>
+                    <overWriteIfNewer>true</overWriteIfNewer>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.mycollab</groupId>
+                                    <artifactId>mycollab-esb</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <includes>*.ftl</includes>
+                                    <outputDirectory>${project.build.directory}/staging/i18n</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.mycollab</groupId>
+                                    <artifactId>mycollab-localization</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <includes>*.properties</includes>
+                                    <excludes>**/pom.properties</excludes>
+                                    <outputDirectory>${project.build.directory}/staging/i18n</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.mycollab</groupId>
+                                    <artifactId>mycollab-scheduler</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <includes>*.ftl</includes>
+                                    <outputDirectory>${project.build.directory}/staging/i18n</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.mycollab</groupId>
+                                    <artifactId>mycollab-servlet</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <includes>*.ftl</includes>
+                                    <outputDirectory>${project.build.directory}/staging/i18n</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- copy *application* jars to izpack staging lib -->
+                        <id>copy-product-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${installer.staging.dir}/lib</outputDirectory>
+                            <excludeScope>provided</excludeScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <executions>
+                    <execution>
+                        <id>prepare-installer</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <copy file="${project.build.directory}/mycollab-app-community-${project.version}.jar"
+                                      tofile="${installer.staging.dir}/lib/mycollab-app-community-${project.version}.jar"/>
+                                <copy todir="${installer.staging.dir}">
+                                    <fileset dir="${installer.resource.dir.app}"/>
+                                </copy>
+                                <copy todir="${installer.staging.dir}/conf">
+                                    <fileset dir="${basedir}/src/main/conf">
+                                        <exclude name="mycollab.properties"/>
+                                    </fileset>
+                                </copy>
+                                <copy todir="${installer.staging.dir}/logs">
+                                    <fileset dir="${basedir}/src/main/logs"/>
+                                </copy>
+                                <copy todir="${installer.staging.dir}/bin">
+                                    <fileset dir="${basedir}/src/main/scripts"/>
+                                </copy>
+                                <copy todir="${installer.staging.dir}/webapp">
+                                    <fileset dir="${basedir}/src/main/webapp"/>
+                                </copy>
+                                <copy todir="${installer.staging.dir}/lib">
+                                    <fileset dir="${basedir}/src/main/lib"/>
+                                </copy>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.6</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/main/assembly/src.xml</descriptor>
+                    </descriptors>
+                    <finalName>MyCollab-${project.version}</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>widgetset</id>
+            <activation>
+                <property>
+                    <name>environment</name>
+                    <value>widgetset</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.vaadin</groupId>
+                    <artifactId>vaadin-client-compiled</artifactId>
+                    <version>${vaadinVersion}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>com.vaadin</groupId>
+                    <artifactId>vaadin-client</artifactId>
+                    <version>${vaadinVersion}</version>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>com.vaadin</groupId>
+                    <artifactId>vaadin-client-compiler</artifactId>
+                    <version>${vaadinVersion}</version>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <version>2.6.1</version>
+                        <configuration>
+                            <filesets>
+                                <fileset>
+                                    <directory>src/main/webapp/VAADIN/widgetsets</directory>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.vaadin</groupId>
+                        <artifactId>vaadin-maven-plugin</artifactId>
+                        <version>${vaadinVersion}</version>
+                        <configuration>
+                            <extraJvmArgs>-Xmx1024M -Xss2048k</extraJvmArgs>
+                            <!-- <runTarget>mobilemail</runTarget> -->
+                            <!-- We are doing "inplace" but into subdir VAADIN/widgetsets. 
+                                This way compatible with Vaadin eclipse plugin. -->
+                            <webappDirectory>${basedir}/src/main/webapp/VAADIN/widgetsets
+                            </webappDirectory>
+                            <hostedWebapp>${basedir}/src/main/webapp/VAADIN/widgetsets
+                            </hostedWebapp>
+                            <!-- Most Vaadin apps don't need this stuff, 
+                                guide that to target -->
+                            <persistentunitcachedir>${project.build.directory}</persistentunitcachedir>
+                            <deploy>${project.build.directory}/gwt-deploy</deploy>
+                            <!-- Compile report is not typically needed either, 
+                                saves hunreds of mb disk -->
+                            <compileReport>false</compileReport>
+                            <noServer>true</noServer>
+                            <!-- Remove draftCompile when project is ready -->
+                            <draftCompile>false</draftCompile>
+
+                            <style>OBF</style>
+                            <runTarget>http://localhost:8080/</runTarget>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <configuration>
+                                    <!-- if you don't specify any modules, the plugin will find them -->
+                                    <modules>
+                                        <module>com.mycollab.widgetset.MyCollabMobileWidgetSet</module>
+                                        <module>com.mycollab.widgetset.MyCollabWidgetSet</module>
+                                    </modules>
+                                </configuration>
+                                <goals>
+                                    <goal>clean</goal>
+                                    <goal>resources</goal>
+                                    <goal>update-theme</goal>
+                                    <goal>update-widgetset</goal>
+                                    <goal>compile-theme</goal>
+                                    <goal>compile</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

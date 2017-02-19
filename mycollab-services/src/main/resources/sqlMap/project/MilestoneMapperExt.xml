@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mycollab.module.project.dao.MilestoneMapperExt">
+
+    <resultMap id="MilestoneResult"
+        extends="com.mycollab.module.project.dao.MilestoneMapper.ResultMapWithBLOBs"
+        type="com.mycollab.module.project.domain.SimpleMilestone">
+        <result column="ownerAvatarId" jdbcType="VARCHAR" property="ownerAvatarId" />
+        <result column="ownerFullName" jdbcType="VARCHAR" property="ownerFullName" />
+        <result column="createdUserAvatarId" jdbcType="VARCHAR" property="createdUserAvatarId" />
+        <result column="createdUserFullName" jdbcType="VARCHAR" property="createdUserFullName" />
+        <result column="numOpenTasks" jdbcType="INTEGER" property="numOpenTasks" />
+        <result column="numTasks" jdbcType="INTEGER" property="numTasks" />
+        <result column="numOpenBugs" jdbcType="INTEGER" property="numOpenBugs" />
+        <result column="numBugs" jdbcType="INTEGER" property="numBugs" />
+        <result column="numOpenRisks" jdbcType="INTEGER" property="numOpenRisks" />
+        <result column="numRisks" jdbcType="INTEGER" property="numRisks" />
+        <result column="projectName" property="projectName" jdbcType="VARCHAR" />
+        <result column="projectShortName" property="projectShortName" jdbcType="VARCHAR" />
+        <result column="totalTaskBillableHours" property="totalTaskBillableHours" jdbcType="DOUBLE"/>
+        <result column="totalTaskNonBillableHours" property="totalTaskNonBillableHours" jdbcType="DOUBLE"/>
+        <result column="totalBugBillableHours" property="totalBugBillableHours" jdbcType="DOUBLE"/>
+        <result column="totalBugNonBillableHours" property="totalBugNonBillableHours" jdbcType="DOUBLE"/>
+    </resultMap>
+    
+    <sql id="queryTotalCountSearchCriteria">
+        <![CDATA[
+            #set($searchCriteria = $_parameter.searchCriteria)
+            
+            #ifnotnull($searchCriteria.id)
+               ${searchCriteria.id.operation} m_prj_milestone.id ${searchCriteria.id.compareOperator} @{searchCriteria.id.value,jdbcType=NUMERIC}
+            #end
+            
+            #ifnotnull($searchCriteria.assignUser)
+                ${searchCriteria.assignUser.operation} m_prj_milestone.assignUser = @{searchCriteria.assignUser.value}
+            #end
+            
+            #ifnotnull($searchCriteria.statuses)
+                ${searchCriteria.statuses.operation} m_prj_milestone.status IN
+                #repeat(${searchCriteria.statuses.values} $status "," "(" ")")
+                    @{status}
+                #end
+            #end
+
+            #ifnotnull($searchCriteria.projectIds)
+                ${searchCriteria.projectIds.operation} m_prj_milestone.projectId IN
+                #repeat(${searchCriteria.projectIds.values} $projectId "," "(" ")")
+                    @{projectId}
+                #end
+            #end
+            
+            #ifnotnull($searchCriteria.milestoneName)
+                ${searchCriteria.milestoneName.operation} m_prj_milestone.name like '%${searchCriteria.milestoneName.value}%'
+            #end
+            
+            #ifnotnull($searchCriteria.saccountid)
+                ${searchCriteria.saccountid.operation} m_prj_milestone.sAccountId = @{searchCriteria.saccountid.value,jdbcType=NUMERIC}
+            #end
+            
+            #totalCountExpr($searchCriteria.extraFields)
+        ]]>
+    </sql>
+
+    <sql id="querySearchCriteria">
+        <![CDATA[
+            #set($searchCriteria = $_parameter.searchCriteria)
+            
+            #ifnotnull($searchCriteria.id)
+               ${searchCriteria.id.operation} m_prj_milestone.id ${searchCriteria.id.compareOperator} @{searchCriteria.id.value,jdbcType=NUMERIC}
+            #end
+            
+            #ifnotnull($searchCriteria.assignUser)
+                ${searchCriteria.assignUser.operation} m_prj_milestone.assignUser = @{searchCriteria.assignUser.value}
+            #end
+            
+            #ifnotnull($searchCriteria.statuses)
+                ${searchCriteria.statuses.operation} m_prj_milestone.status IN
+                #repeat(${searchCriteria.statuses.values} $status "," "(" ")")
+                    @{status}
+                #end
+            #end
+
+            #ifnotnull($searchCriteria.projectIds)
+                ${searchCriteria.projectIds.operation} m_prj_milestone.projectId IN
+                #repeat(${searchCriteria.projectIds.values} $projectId "," "(" ")")
+                    @{projectId}
+                #end
+            #end
+            
+            #ifnotnull($searchCriteria.milestoneName)
+                ${searchCriteria.milestoneName.operation} m_prj_milestone.name like '%${searchCriteria.milestoneName.value}%'
+            #end
+            
+            #ifnotnull($searchCriteria.saccountid)
+                ${searchCriteria.saccountid.operation} m_prj_milestone.sAccountId = @{searchCriteria.saccountid.value,jdbcType=NUMERIC}
+            #end
+            
+            #selectExpr($searchCriteria.extraFields)
+        ]]>
+    </sql>
+
+    <sql id="selectMilestone">
+        <![CDATA[
+            SELECT m_prj_milestone.id, m_prj_milestone.name, m_prj_milestone.description, m_prj_milestone.startDate, m_prj_milestone.endDate,
+                   m_prj_milestone.dueDate,
+                   m_prj_milestone.assignUser, m_prj_milestone.status, m_prj_milestone.projectId, m_prj_milestone.status, m_prj_milestone.createdTime,
+                   m_prj_milestone.lastUpdatedTime, m_prj_milestone.orderIndex, m_prj_milestone.color,
+                   m_prj_milestone.sAccountId, m_prj_milestone.createdUser, createdUserTbl.avatarId AS createdUserAvatarId,
+                   concat(createdUserTbl.firstname, ' ', LTRIM(concat(IFNULL(createdUserTbl.middlename, ''), ' ')), createdUserTbl.lastname) AS createdUserFullName,
+                   s_user.avatarId AS ownerAvatarId,
+                   concat(s_user.firstname, ' ', LTRIM(concat(IFNULL(s_user.middlename, ''), ' ')), s_user.lastname) AS ownerFullName,
+                   (SELECT COUNT(*) FROM m_prj_task WHERE m_prj_task.milestoneId=m_prj_milestone.id) AS numTasks,
+                   (SELECT COUNT(*) FROM m_prj_task WHERE m_prj_task.milestoneId=m_prj_milestone.id AND m_prj_task.status<>'Closed') AS numOpenTasks,
+                   (SELECT COUNT(*) FROM m_tracker_bug WHERE m_tracker_bug.milestoneId=m_prj_milestone.id) AS numBugs,
+                   (SELECT COUNT(*) FROM m_tracker_bug WHERE m_tracker_bug.milestoneId=m_prj_milestone.id AND m_tracker_bug.status NOT IN ('Verified')) AS numOpenBugs,
+                   (SELECT COUNT(*) FROM m_prj_risk WHERE m_prj_risk.milestoneId=m_prj_milestone.id) AS numRisks,
+                   (SELECT COUNT(*) FROM m_prj_risk WHERE m_prj_risk.milestoneId=m_prj_milestone.id AND m_prj_risk.status <> 'Closed') AS numOpenRisks,
+                   m_prj_project.name as projectName, m_prj_project.shortname AS projectShortName,
+                   (SELECT COALESCE(SUM(m_prj_time_logging.logValue), 0) FROM m_prj_time_logging, m_prj_task WHERE m_prj_time_logging.projectId = m_prj_milestone.projectId
+                     AND m_prj_task.milestoneId=m_prj_milestone.id
+                     AND m_prj_time_logging.type='Project-Task' AND m_prj_time_logging.typeId=m_prj_task.id AND m_prj_time_logging.isBillable = 1) AS totalTaskBillableHours,
+                   (SELECT COALESCE(SUM(m_prj_time_logging.logValue), 0) FROM m_prj_time_logging, m_prj_task WHERE m_prj_time_logging.projectId = m_prj_milestone.projectId
+                     AND m_prj_task.milestoneId=m_prj_milestone.id
+                     AND m_prj_time_logging.type='Project-Task' AND m_prj_time_logging.typeId=m_prj_task.id AND m_prj_time_logging.isBillable = 0) AS totalTaskNonBillableHours,
+                   (SELECT COALESCE(SUM(m_prj_time_logging.logValue), 0) FROM m_prj_time_logging, m_tracker_bug WHERE m_prj_time_logging.projectId = m_prj_milestone.projectId
+                     AND m_tracker_bug.milestoneId=m_prj_milestone.id
+                     AND m_prj_time_logging.type='Project-Bug' AND m_prj_time_logging.typeId=m_tracker_bug.id AND m_prj_time_logging.isBillable = 1) AS totalBugBillableHours,
+                   (SELECT COALESCE(SUM(m_prj_time_logging.logValue), 0) FROM m_prj_time_logging, m_tracker_bug WHERE m_prj_time_logging.projectId = m_prj_milestone.projectId
+                     AND m_tracker_bug.milestoneId=m_prj_milestone.id
+                     AND m_prj_time_logging.type='Project-Bug' AND m_prj_time_logging.typeId=m_tracker_bug.id AND m_prj_time_logging.isBillable = 0) AS totalBugNonBillableHours
+                FROM m_prj_milestone
+                    INNER JOIN m_prj_project ON (m_prj_milestone.projectId = m_prj_project.id)
+                    LEFT OUTER JOIN s_user ON (m_prj_milestone.assignUser = s_user.username)
+                    LEFT OUTER JOIN s_user AS createdUserTbl ON (m_prj_milestone.createduser = createdUserTbl.username)
+        ]]>
+    </sql>
+
+    <select id="getTotalCount" parameterType="MilestoneSearchCriteria"
+        resultType="int" lang="velocity">
+        SELECT count(*) as totalCount FROM m_prj_milestone
+
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="queryTotalCountSearchCriteria" />
+            #end
+        #end
+    </select>
+
+    <select id="findPageableListByCriteria" parameterType="MilestoneSearchCriteria"
+        resultMap="MilestoneResult" lang="velocity">
+
+        <include refid="selectMilestone" />
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="querySearchCriteria" />
+            #end
+        #end
+        <include refid="orderStatement" />
+    </select>
+
+    <sql id="orderStatement">
+        ORDER BY
+        #ifnotnull($_parameter.searchCriteria.orderFields)
+            #repeat(${_parameter.searchCriteria.orderFields} $orderField "" "" "")
+                ${orderField.field} ${orderField.direction},
+            #end
+        #end
+        m_prj_milestone.lastUpdatedTime DESC
+    </sql>
+
+    <select id="findById" parameterType="java.lang.Integer" resultMap="MilestoneResult" lang="velocity">
+        <include refid="selectMilestone" />
+
+        WHERE m_prj_milestone.id=@{milestoneId, jdbcType=NUMERIC}
+    </select>
+
+    <select id="getNextItemKey" parameterType="map" resultType="java.lang.Integer" lang="velocity">
+        SELECT MIN(id) FROM m_prj_milestone
+
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="queryTotalCountSearchCriteria" />
+            #end    
+        #end
+    </select>
+
+    <select id="getPreviousItemKey" parameterType="map" resultType="java.lang.Integer" lang="velocity">
+        SELECT MAX(id) FROM m_prj_milestone
+
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="queryTotalCountSearchCriteria" />
+            #end    
+        #end
+    </select>
+
+    <select id="getTotalBillableHours" parameterType="int" resultType="double" lang="velocity">
+        SELECT COALESCE(SUM(timeValue), 0)
+        FROM
+        (
+        (SELECT m_prj_time_logging.logValue AS timeValue
+            FROM m_prj_milestone, m_prj_task, m_prj_time_logging
+            WHERE m_prj_milestone.id = @{milestoneid} AND m_prj_task.milestoneId = m_prj_milestone.id
+                AND m_prj_task.id = m_prj_time_logging.typeId
+                AND m_prj_time_logging.type = 'Project-Task'
+                AND m_prj_time_logging.isBillable = '1')
+        UNION
+        (SELECT m_prj_time_logging.logValue AS timeValue
+            FROM m_prj_milestone, m_tracker_bug, m_prj_time_logging
+            WHERE m_prj_milestone.id = @{milestoneid} AND m_tracker_bug.milestoneId = m_prj_milestone.id
+                AND m_tracker_bug.id = m_prj_time_logging.typeId
+                AND m_prj_time_logging.type = 'Project-Bug'
+                AND m_prj_time_logging.isBillable = '1')) AS T
+    </select>
+
+    <select id="getTotalNonBillableHours" parameterType="int" resultType="double" lang="velocity">
+        SELECT COALESCE(SUM(timeValue), 0)
+        FROM
+        (
+        (SELECT m_prj_time_logging.logValue AS timeValue
+            FROM m_prj_milestone, m_prj_task, m_prj_time_logging
+            WHERE m_prj_milestone.id = @{milestoneid} AND m_prj_task.milestoneId = m_prj_milestone.id
+                AND m_prj_task.id = m_prj_time_logging.typeId
+                AND m_prj_time_logging.type = 'Project-Task'
+                AND m_prj_time_logging.isBillable = '0')
+        UNION
+        (SELECT m_prj_time_logging.logValue AS timeValue
+            FROM m_prj_milestone, m_tracker_bug, m_prj_time_logging
+            WHERE m_prj_milestone.id = @{milestoneid} AND m_tracker_bug.milestoneId = m_prj_milestone.id
+            AND m_tracker_bug.id = m_prj_time_logging.typeId
+            AND m_prj_time_logging.type = 'Project-Bug'
+            AND m_prj_time_logging.isBillable = '0')) AS T
+    </select>
+
+    <select id="getRemainHours" parameterType="int" resultType="double" lang="velocity">
+        SELECT COALESCE(SUM(timeValue), 0)
+        FROM
+        ((SELECT m_prj_task.remainEstimate AS timeValue
+            FROM m_prj_milestone, m_prj_task
+            WHERE m_prj_milestone.id = @{milestoneid} AND m_prj_task.milestoneId = m_prj_milestone.id)
+        UNION
+        (SELECT m_tracker_bug.remainEstimate AS timeValue
+            FROM m_prj_milestone, m_tracker_bug
+            WHERE m_prj_milestone.id = @{milestoneid} AND m_tracker_bug.milestoneId = m_prj_milestone.id)) AS T
+    </select>
+</mapper>    

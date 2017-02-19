@@ -1,0 +1,18 @@
+sudo: false
+cache:
+  directories:
+  - $HOME/.m2
+language: java
+jdk:
+  - oraclejdk8
+before_script:
+  - mysql -e 'create database mycollab_test;'
+  - cd mycollab-deployer-community
+notifications:
+  email:
+    - hainguyen@esofthead.com
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "d/NsKOwPn7nsbpI84hsuoji6Jd2BnLoCb/Sagy5Gm6bAWREbzqF0mjpPAJjxMn04UnRkZS0X0bT5HXhIP8SM/e3xyLtpy+esTwJq6R15ljn5KfMxa23B34pZ/zyWBNxWG73CsrJ5HyzoR9176tFhKnZCAkwsjyZxn300Q+WP2B4="

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mycollab.common.dao.AuditLogMapperExt">
+    
+    <resultMap id="SimpleAuditLogResult"
+        extends="com.mycollab.common.dao.AuditLogMapper.ResultMapWithBLOBs"
+        type="com.mycollab.common.domain.SimpleAuditLog">
+        <result column="postedUserFullName" jdbcType="VARCHAR" property="postedUserFullName" />
+        <result column="postedUserAvatarId" jdbcType="VARCHAR" property="postedUserAvatarId" />
+    </resultMap>
+
+    <sql id="querySearchCriteria">
+        <![CDATA[
+        #set($searchCriteria = $_parameter.searchCriteria)
+        
+        #ifnotnull($searchCriteria.module)
+            ${searchCriteria.module.operation} m_audit_log.module = @{searchCriteria.module.value}
+        #end
+        
+        #ifnotnull($searchCriteria.type)
+            ${searchCriteria.type.operation} m_audit_log.type = @{searchCriteria.type.value}
+        #end
+        
+        #ifnotnull($searchCriteria.typeId)
+            ${searchCriteria.typeId.operation} m_audit_log.typeId = @{searchCriteria.typeId.value}
+        #end
+        
+        #ifnotnull($searchCriteria.saccountid)
+            ${searchCriteria.saccountid.operation} m_audit_log.sAccountId = @{searchCriteria.saccountid.value,jdbcType=NUMERIC}
+        #end
+        ]]>
+    </sql>
+
+    <sql id="selectSimpleAuditLog">
+        <![CDATA[
+        SELECT m_audit_log.id, m_audit_log.object_class, m_audit_log.posteddate, m_audit_log.posteduser, 
+            m_audit_log.sAccountId, m_audit_log.type, m_audit_log.typeId, m_audit_log.module, m_audit_log.changeset,
+            s_user.avatarId AS postedUserAvatarId,
+            concat(s_user.firstname, ' ', LTRIM(concat(IFNULL(s_user.middlename, ''), ' ')), s_user.lastname) as postedUserFullName
+        FROM m_audit_log
+        LEFT OUTER JOIN s_user ON (s_user.username = m_audit_log.posteduser)
+        ]]>
+    </sql>
+
+    <select id="findPageableListByCriteria" parameterType="AuditLogSearchCriteria" resultMap="SimpleAuditLogResult"  lang="velocity">
+        <include refid="selectSimpleAuditLog" />
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="querySearchCriteria" />
+            #end
+        #end    
+        <include refid="orderStatement" />
+    </select>
+
+    <select id="findLatestLog" parameterType="java.lang.Integer" resultMap="SimpleAuditLogResult" lang="velocity">
+        <include refid="selectSimpleAuditLog" />
+
+        WHERE m_audit_log.typeId=@{auditLogId, jdbcType=NUMERIC}
+        ORDER BY m_audit_log.id DESC
+        LIMIT 1
+    </select>
+
+    <sql id="orderStatement">
+        ORDER BY
+        #ifnotnull($_parameter.searchCriteria.orderFields)
+            #repeat(${_parameter.searchCriteria.orderFields} $orderField "" "" "")
+                ${orderField.field} ${orderField.direction},
+            #end
+        #end
+        
+        m_audit_log.posteddate DESC
+    </sql>
+
+    <select id="getTotalCount" parameterType="AuditLogSearchCriteria" resultType="java.lang.Integer" lang="velocity">
+        SELECT count(*) as totalCount FROM m_audit_log
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="querySearchCriteria" />
+            #end
+        #end
+    </select>
+</mapper>    

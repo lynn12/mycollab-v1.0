@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fontFamilies>
+
+    <fontFamily name="DejaVuSerif">
+        <normal>com/mycollab/reporting/resources/fonts/DejaVuSerif.ttf</normal>
+        <bold>com/mycollab/reporting/resources/fonts/DejaVuSerif-Bold.ttf</bold>
+        <italic>com/mycollab/reporting/resources/fonts/DejaVuSerif-Italic.ttf</italic>
+        <boldItalic>com/mycollab/reporting/resources/fonts/DejaVuSerif-Bold.ttf</boldItalic>
+        <pdfEncoding>CP1252</pdfEncoding>
+        <pdfEmbedded>true</pdfEmbedded>
+    </fontFamily>
+</fontFamilies>

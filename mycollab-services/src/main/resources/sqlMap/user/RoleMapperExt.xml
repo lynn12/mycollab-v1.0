@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.mycollab.module.user.dao.RoleMapperExt">
+
+    <resultMap extends="com.mycollab.module.user.dao.RoleMapper.BaseResultMap"
+        id="SimpleRoleUser" type="com.mycollab.module.user.domain.SimpleRole">
+        <result column="permissionVal" jdbcType="LONGVARCHAR" property="permissionVal" />
+    </resultMap>
+
+    <sql id="querySearchCriteria">
+        <![CDATA[
+        #set($searchCriteria = $_parameter.searchCriteria)
+        
+        #ifnotnull($searchCriteria.saccountid)
+            ${searchCriteria.saccountid.operation} s_roles.sAccountId = @{searchCriteria.saccountid.value}
+        #end
+        
+        #ifnotnull($searchCriteria.roleName)
+            ${searchCriteria.roleName.operation} s_roles.rolename like '%${searchCriteria.roleName.value}%'
+        #end
+        ]]>
+    </sql>
+
+    <select id="getTotalCount" resultType="int" parameterType="RoleSearchCriteria" lang="velocity">
+        SELECT count(*) as totalCount FROM s_roles
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="querySearchCriteria" />
+            #end
+        #end
+    </select>
+
+    <sql id="selectSimpleRole">
+        <![CDATA[
+            SELECT s_roles.id, s_roles.rolename, s_roles.description, s_roles.sAccountId, s_roles.isSystemRole,
+                s_roles.isDefault, s_role_permission.roleVal AS permissionVal
+            FROM s_roles
+                LEFT OUTER JOIN s_role_permission ON (s_role_permission.roleid = s_roles.id)
+        ]]>
+    </sql>
+
+    <select id="findPageableListByCriteria" resultMap="SimpleRoleUser" parameterType="RoleSearchCriteria" lang="velocity">
+        <include refid="selectSimpleRole" />
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="querySearchCriteria" />
+            #end
+        #end
+    </select>
+
+    <select id="findById" parameterType="java.lang.Integer" resultMap="SimpleRoleUser" lang="velocity">
+        <include refid="selectSimpleRole" />
+
+        WHERE s_roles.id=@{roleId, jdbcType=NUMERIC}
+    </select>
+</mapper>

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mycollab.common.dao.ActivityStreamMapperExt">
+
+    <resultMap id="SimpleActivityStreamResult"
+        extends="com.mycollab.common.dao.ActivityStreamMapper.ResultMapWithBLOBs"
+        type="com.mycollab.common.domain.SimpleActivityStream">
+        <result column="createdUserAvatarId" jdbcType="VARCHAR" property="createdUserAvatarId" />
+        <result column="createdUserFullName" jdbcType="VARCHAR" property="createdUserFullName" />
+        <association property="assoAuditLog" columnPrefix="log_"
+            javaType="com.mycollab.common.domain.SimpleAuditLog"
+            resultMap="com.mycollab.common.dao.AuditLogMapperExt.SimpleAuditLogResult" />
+    </resultMap>
+
+    <sql id="querySearchCriteria">
+        <![CDATA[
+        #set($searchCriteria = $_parameter.searchCriteria)
+        
+        #ifnotnull($searchCriteria.createdUser)
+            ${searchCriteria.createdUser.operation}
+            s_activitystream.createdUser = @{searchCriteria.createdUser.value}
+        #end
+        
+        #ifnotnull($searchCriteria.saccountid)
+            ${searchCriteria.saccountid.operation}
+            s_activitystream.sAccountId = @{searchCriteria.saccountid.value}
+        #end
+        
+        #ifnotnull($searchCriteria.moduleSet)
+            ${searchCriteria.moduleSet.operation}
+            s_activitystream.module IN
+            #repeat(${searchCriteria.moduleSet.values} $module "," "(" ")")
+                @{module}
+            #end
+        #end
+
+        #ifnotnull($searchCriteria.types)
+            ${searchCriteria.types.operation}
+            s_activitystream.type IN
+            #repeat(${searchCriteria.types.values} $type "," "(" ")")
+                @{type}
+            #end
+        #end
+        
+        #ifnotnull($searchCriteria.extraTypeIds)
+            ${searchCriteria.extraTypeIds.operation}
+            s_activitystream.extraTypeId IN
+            #repeat(${searchCriteria.extraTypeIds.values} $extraTypeId "," "(" ")")
+                @{extraTypeId}
+            #end
+        #end
+        
+        #selectExpr($searchCriteria.extraFields)
+        ]]>
+    </sql>
+    
+    <sql id="queryTotalCountSearchCriteria">
+        <![CDATA[
+        #set($searchCriteria = $_parameter.searchCriteria)
+        
+        #ifnotnull($searchCriteria.createdUser)
+            ${searchCriteria.createdUser.operation}
+            s_activitystream.createdUser = @{searchCriteria.createdUser.value}
+        #end
+        
+        #ifnotnull($searchCriteria.saccountid)
+            ${searchCriteria.saccountid.operation}
+            s_activitystream.sAccountId = @{searchCriteria.saccountid.value}
+        #end
+        
+        #ifnotnull($searchCriteria.moduleSet)
+            ${searchCriteria.moduleSet.operation}
+            s_activitystream.module IN
+            #repeat(${searchCriteria.moduleSet.values} $module "," "(" ")")
+                @{module}
+            #end
+        #end
+        
+        #ifnotnull($searchCriteria.extraTypeIds)
+            ${searchCriteria.extraTypeIds.operation}
+            s_activitystream.extraTypeId IN
+            #repeat(${searchCriteria.extraTypeIds.values} $extraTypeId "," "(" ")")
+                @{extraTypeId}
+            #end
+        #end
+
+        #ifnotnull($searchCriteria.types)
+            ${searchCriteria.types.operation}
+            s_activitystream.type IN
+            #repeat(${searchCriteria.types.values} $type "," "(" ")")
+                @{type}
+            #end
+        #end
+        
+        #totalCountExpr($searchCriteria.extraFields)
+        ]]>
+    </sql>
+
+    <select id="findPageableListByCriteria" parameterType="ActivityStreamSearchCriteria"
+        resultMap="SimpleActivityStreamResult" lang="velocity">
+        <![CDATA[
+        SELECT s_activitystream.id, s_activitystream.sAccountId, s_activitystream.type, s_activitystream.typeId,
+               s_activitystream.createdTime, s_activitystream.action, s_activitystream.createdUser, s_activitystream.nameField, s_activitystream.extraTypeId,
+               s_activitystream.module, s_user.avatarId AS createdUserAvatarId,
+               concat(s_user.firstname, ' ', LTRIM(IFNULL(s_user.middlename, '')), s_user.lastname) as createdUserFullName,
+               m_audit_log.id AS log_id, m_audit_log.object_class AS log_object_class, m_audit_log.posteddate AS log_posteddate, m_audit_log.posteduser AS log_posteduser,
+               m_audit_log.sAccountId AS log_sAccountId, m_audit_log.type AS log_type, m_audit_log.typeId AS log_typeid, m_audit_log.module AS log_module,
+               m_audit_log.changeset AS log_changeset
+        FROM s_activitystream
+        LEFT OUTER JOIN s_user ON (s_user.username = s_activitystream.createdUser)
+        LEFT OUTER JOIN m_audit_log ON (s_activitystream.id=m_audit_log.activityLogId)
+        ]]>
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="querySearchCriteria" />
+                AND s_activitystream.action != 'comment'
+            #end
+        #end
+        UNION
+        <![CDATA[
+        SELECT s_activitystream.id, s_activitystream.sAccountId, s_activitystream.type, s_activitystream.typeId,
+               s_activitystream.createdTime, s_activitystream.action, s_activitystream.createdUser, s_activitystream.nameField, s_activitystream.extraTypeId,
+               s_activitystream.module, s_user.avatarId AS createdUserAvatarId,
+               concat(s_user.firstname, ' ', LTRIM(IFNULL(s_user.middlename, '')), s_user.lastname) as createdUserFullName,
+               NULL AS log_id, NULL AS log_object_class, NULL AS log_posteddate, NULL AS log_posteduser,
+               NULL AS log_sAccountId, NULL AS log_type, NULL AS log_typeid, NULL AS log_module,
+               s_activitystream.nameField AS log_changeset
+        FROM s_activitystream
+        LEFT OUTER JOIN s_user ON (s_user.username = s_activitystream.createdUser)
+        LEFT OUTER JOIN m_audit_log ON (s_activitystream.id=m_audit_log.activityLogId)
+        ]]>
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="querySearchCriteria" />
+                AND s_activitystream.action = 'comment'
+            #end
+        #end
+        <include refid="orderStatement" />
+    </select>
+
+    <sql id="orderStatement">
+        ORDER BY
+        #ifnotnull($_parameter.searchCriteria.orderFields)
+            #repeat(${_parameter.searchCriteria.orderFields} $orderField "" "" "")
+                ${orderField.field} ${orderField.direction},
+            #end
+        #end
+        createdTime DESC
+    </sql>
+
+    <select id="getTotalCount" parameterType="ActivityStreamSearchCriteria"
+        resultType="java.lang.Integer"  lang="velocity">
+        SELECT count(*) as totalCount FROM s_activitystream
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="queryTotalCountSearchCriteria" />
+            #end
+        #end
+    </select>
+</mapper>

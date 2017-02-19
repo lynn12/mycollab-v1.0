@@ -1,0 +1,618 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mycollab.module.project.dao.ProjectMapperExt">
+
+    <resultMap extends="com.mycollab.module.project.dao.ProjectMapper.ResultMapWithBLOBs"
+        id="SimpleProjectResult" type="com.mycollab.module.project.domain.SimpleProject">
+        <result column="createUserFullName" jdbcType="VARCHAR" property="createUserFullName" />
+        <result column="accountName" jdbcType="VARCHAR" property="accountName" />
+        <result column="numOpenBugs" jdbcType="INTEGER" property="numOpenBugs" />
+        <result column="numBugs" jdbcType="INTEGER" property="numBugs" />
+        <result column="numOpenTasks" jdbcType="INTEGER" property="numOpenTasks" />
+        <result column="numTasks" jdbcType="INTEGER" property="numTasks" />
+        <result column="numOpenRisks" jdbcType="INTEGER" property="numOpenRisks" />
+        <result column="numRisks" jdbcType="INTEGER" property="numRisks" />
+        <result column="numActiveMembers" jdbcType="INTEGER" property="numActiveMembers" />
+        <result column="numClosedPhase" jdbcType="INTEGER" property="numClosedPhase" />
+        <result column="numInProgressPhase" jdbcType="INTEGER" property="numInProgressPhase" />
+        <result column="numFuturePhase" jdbcType="INTEGER" property="numFuturePhase" />
+        <result column="totalBillableHours" jdbcType="DOUBLE" property="totalBillableHours" />
+        <result column="totalNonBillableHours" jdbcType="DOUBLE" property="totalNonBillableHours" />
+        <result column="leadFullName" jdbcType="VARCHAR" property="leadFullName" />
+        <result column="leadAvatarId" jdbcType="VARCHAR" property="leadAvatarId" />
+        <result column="clientName" jdbcType="VARCHAR" property="clientName" />
+        <result column="clientAvatarId" jdbcType="VARCHAR" property="clientAvatarId" />
+        <association property="customizeView"
+            resultMap="com.mycollab.module.project.dao.ProjectCustomizeViewMapper.BaseResultMap"
+            columnPrefix="view_"/>
+    </resultMap>
+
+    <resultMap extends="com.mycollab.common.dao.ActivityStreamMapperExt.SimpleActivityStreamResult"
+        id="ActivityStreamResult" type="com.mycollab.module.project.domain.ProjectActivityStream">
+        <result column="projectId" jdbcType="INTEGER" property="projectId" />
+        <result column="projectName" jdbcType="VARCHAR" property="projectName" />
+        <result column="projectShortName" jdbcType="VARCHAR" property="projectShortName" />
+        <result column="itemKey" jdbcType="VARCHAR" property="itemKey" />
+    </resultMap>
+
+    <sql id="querySearchCriteria">
+        <![CDATA[
+        #set($searchCriteria = $_parameter.searchCriteria)
+        
+        #ifnotnull($searchCriteria.projectStatuses)
+            ${searchCriteria.projectStatuses.operation}
+            m_prj_project.projectStatus IN
+            #repeat(${searchCriteria.projectStatuses.values} $status "," "(" ")")
+                @{status}
+            #end
+        #end
+
+        #ifnotnull($searchCriteria.projectKeys)
+            ${searchCriteria.projectKeys.operation}
+            m_prj_project.id IN
+            #repeat(${searchCriteria.projectKeys.values} $projectId "," "(" ")")
+                @{projectId}
+            #end
+        #end
+        
+        #ifnotnull($searchCriteria.saccountid)
+            ${searchCriteria.saccountid.operation} m_prj_project.sAccountId = @{searchCriteria.saccountid.value,jdbcType=NUMERIC}
+        #end
+
+        #ifnotnull($searchCriteria.accountId)
+            ${searchCriteria.accountId.operation} m_prj_project.accountId = @{searchCriteria.accountId.value,jdbcType=NUMERIC}
+        #end
+
+        #ifnotnull($searchCriteria.projectName)
+            ${searchCriteria.projectName.operation} m_prj_project.name LIKE '%${searchCriteria.projectName.value}%'
+        #end
+        
+        #ifnotnull($searchCriteria.involvedMember)
+            ${searchCriteria.involvedMember.operation} 
+            EXISTS (SELECT 1 FROM m_prj_member
+                WHERE m_prj_member.status<>'InActive'
+                    AND m_prj_member.projectId=m_prj_project.id
+                    AND m_prj_member.username=@{searchCriteria.involvedMember.value}
+                    LIMIT 1)
+        #end
+        
+        #selectExpr($searchCriteria.extraFields)
+        ]]>
+    </sql>
+
+    <sql id="queryTotalCountSearchCriteria">
+        <![CDATA[
+        #set($searchCriteria = $_parameter.searchCriteria)
+        
+        #ifnotnull($searchCriteria.projectStatuses)
+            ${searchCriteria.projectStatuses.operation}
+            m_prj_project.projectStatus IN
+            #repeat(${searchCriteria.projectStatuses.values} $status "," "(" ")")
+                @{status}
+            #end
+        #end
+
+        #ifnotnull($searchCriteria.projectKeys)
+            ${searchCriteria.projectKeys.operation}
+            m_prj_project.id IN
+            #repeat(${searchCriteria.projectKeys.values} $projectId "," "(" ")")
+                @{projectId}
+            #end
+        #end
+        
+        #ifnotnull($searchCriteria.saccountid)
+            ${searchCriteria.saccountid.operation} m_prj_project.sAccountId = @{searchCriteria.saccountid.value,jdbcType=NUMERIC}
+        #end
+
+        #ifnotnull($searchCriteria.accountId)
+            ${searchCriteria.accountId.operation} m_prj_project.accountId = @{searchCriteria.accountId.value,jdbcType=NUMERIC}
+        #end
+
+        #ifnotnull($searchCriteria.projectName)
+            ${searchCriteria.projectName.operation} m_prj_project.name LIKE '%${searchCriteria.projectName.value}%'
+        #end
+        
+        #ifnotnull($searchCriteria.involvedMember)
+            ${searchCriteria.involvedMember.operation} 
+            EXISTS (SELECT 1 FROM m_prj_member
+                WHERE m_prj_member.status<>'Delete'
+                    AND m_prj_member.projectId=m_prj_project.id
+                    AND m_prj_member.username=@{searchCriteria.involvedMember.value}
+                    LIMIT 1)
+        #end
+        
+        #totalCountExpr($searchCriteria.extraFields)
+        ]]>
+    </sql>
+
+    <sql id="selectSimpleProject">
+        <![CDATA[
+        SELECT m_prj_project.id, m_prj_project.name, m_prj_project.createUser,
+        m_prj_project.priority, m_prj_project.shortname, m_prj_project.planStartDate, m_prj_project.planEndDate, 
+        m_prj_project.targetBudget, m_prj_project.homePage, m_prj_project.actualBudget, m_prj_project.projectType, 
+        m_prj_project.projectStatus, m_prj_project.description, m_prj_project.defaultBillingRate,
+        m_prj_project.defaultOvertimeBillingRate, m_prj_project.sAccountId,
+        m_prj_project.createdtime, m_prj_project.lastUpdatedTime, m_prj_project.avatarId, m_prj_project.contextAsk, m_prj_project.lead,
+        concat(s_user.firstname, ' ', LTRIM(concat(IFNULL(s_user.middlename, ''), ' ')), s_user.lastname) AS createUserFullName,
+        concat(leadUser.firstname, ' ', LTRIM(concat(IFNULL(leadUser.middlename, ''), ' ')), leadUser.lastname) AS leadFullName,
+        leadUser.avatarId AS leadAvatarId, m_prj_project.accountId,
+        m_crm_account.accountName AS clientName, m_crm_account.avatarId AS clientAvatarId, m_prj_project.currencyid, m_prj_project.progress,
+        (SELECT COUNT(*) FROM m_tracker_bug WHERE m_tracker_bug.projectId=m_prj_project.id) AS numBugs,
+        (SELECT COUNT(*) FROM m_tracker_bug WHERE m_tracker_bug.projectId=m_prj_project.id AND m_tracker_bug.status NOT IN ('Resolved', 'Verified')) AS numOpenBugs,
+        (SELECT COUNT(*) FROM m_prj_task WHERE m_prj_task.projectId=m_prj_project.id) AS numTasks,
+        (SELECT COUNT(*) FROM m_prj_task WHERE m_prj_task.projectId=m_prj_project.id AND m_prj_task.status <> 'Closed') AS numOpenTasks,
+        (SELECT COUNT(*) FROM m_prj_risk WHERE m_prj_risk.projectId=m_prj_project.id) AS numRisks,
+        (SELECT COUNT(*) FROM m_prj_risk WHERE m_prj_risk.projectId=m_prj_project.id AND m_prj_risk.status <> 'Closed') AS numOpenRisks,
+        (SELECT COUNT(*) FROM m_prj_member WHERE m_prj_member.projectId = m_prj_project.id AND m_prj_member.status='Active') AS numActiveMembers, 
+        (SELECT COUNT(*) FROM m_prj_milestone WHERE m_prj_milestone.projectId = m_prj_project.id AND m_prj_milestone.status = 'Closed') AS numClosedPhase,
+        (SELECT COUNT(*) FROM m_prj_milestone WHERE m_prj_milestone.projectId = m_prj_project.id AND m_prj_milestone.status = 'InProgress') AS numInProgressPhase,
+        (SELECT COUNT(*) FROM m_prj_milestone WHERE m_prj_milestone.projectId = m_prj_project.id AND m_prj_milestone.status = 'Future') AS numFuturePhase,
+        (SELECT COALESCE(SUM(m_prj_time_logging.logValue), 0) FROM m_prj_time_logging WHERE m_prj_time_logging.projectId = m_prj_project.id AND m_prj_time_logging.isBillable = 1) AS totalBillableHours,
+        (SELECT COALESCE(SUM(m_prj_time_logging.logValue), 0) FROM m_prj_time_logging WHERE m_prj_time_logging.projectId = m_prj_project.id AND m_prj_time_logging.isBillable = 0) AS totalNonBillableHours,
+        m_prj_customize_view.id AS view_id, m_prj_customize_view.projectId AS view_projectId,
+        m_prj_customize_view.displayMessage AS view_displayMessage, m_prj_customize_view.displayMilestone AS view_displayMilestone,
+        m_prj_customize_view.displayTicket AS view_displayTicket, m_prj_customize_view.displayStandup AS view_displayStandup,
+        m_prj_customize_view.displayTimeLogging AS view_displayTimeLogging,
+        m_prj_customize_view.displayPage AS view_displayPage, m_prj_customize_view.displayFile AS view_displayFile,
+        m_prj_customize_view.displayInvoice AS view_displayInvoice
+        FROM m_prj_project 
+            LEFT OUTER JOIN m_crm_account ON (m_crm_account.id=m_prj_project.accountId)
+            LEFT OUTER JOIN s_user ON (m_prj_project.createUser = s_user.username)
+            LEFT OUTER JOIN s_user AS leadUser ON (m_prj_project.lead = leadUser.username)
+            LEFT OUTER JOIN m_prj_customize_view ON (m_prj_project.id=m_prj_customize_view.projectId)
+        ]]>
+    </sql>
+
+    <select id="findProjectById" parameterType="java.lang.Integer" resultMap="SimpleProjectResult" lang="velocity">
+        <include refid="selectSimpleProject" />
+        WHERE m_prj_project.id=@{projectId, jdbcType=NUMERIC}
+    </select>
+
+    <select id="getTotalCount" resultType="int" parameterType="ProjectSearchCriteria" lang="velocity">
+        SELECT count(*) as totalCount
+        FROM m_prj_project
+        #ifnotnull($_parameter.searchCriteria)
+          #trimext("WHERE" "AND|OR")
+            <include refid="queryTotalCountSearchCriteria" />
+          #end
+        #end
+    </select>
+    
+    <select id="getProjectsUserInvolved" parameterType="map" resultMap="SimpleProjectResult" lang="velocity">
+        <![CDATA[
+        SELECT m_prj_project.id, m_prj_project.name, m_prj_project.shortname, m_prj_project.avatarId
+        FROM m_prj_project
+        WHERE m_prj_project.sAccountId = @{_parameter.sAccountId} AND m_prj_project.projectStatus='Open'AND
+            EXISTS (SELECT 1
+                        FROM m_prj_member WHERE m_prj_member.projectId = m_prj_project.id
+                            AND m_prj_member.username=@{_parameter.username}
+                            LIMIT 1)
+        ]]>
+    </select>
+
+    <select id="getUserProjectKeys" resultType="java.lang.Integer" lang="velocity">
+        SELECT m_prj_project.id
+        FROM m_prj_project
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+               <include refid="querySearchCriteria" />
+            #end
+        #end
+    </select>
+
+
+    <select id="findPageableListByCriteria" resultMap="SimpleProjectResult" parameterType="ProjectSearchCriteria" lang="velocity">
+        <include refid="selectSimpleProject" />
+        #ifnotnull($_parameter.searchCriteria)
+          #trimext("WHERE" "AND|OR")
+            <include refid="querySearchCriteria" />
+          #end
+        #end
+        <include refid="orderStatement" />
+    </select>
+
+    <sql id="orderStatement">
+        ORDER BY
+        #ifnotnull($_parameter.searchCriteria.orderFields)
+            #repeat(${_parameter.searchCriteria.orderFields} $orderField "" "" "")
+                ${orderField.field} ${orderField.direction},
+            #end
+        #end
+        m_prj_project.lastUpdatedTime DESC
+    </sql>
+
+    <select id="getProjectActivityStreams" parameterType="ActivityStreamSearchCriteria" resultMap="ActivityStreamResult" lang="velocity">
+         (SELECT s_activitystream.id, s_activitystream.sAccountId, s_activitystream.type, s_activitystream.typeId, m_tracker_bug.bugkey AS itemKey, 
+               s_activitystream.createdTime, s_activitystream.action, s_activitystream.createdUser, s_activitystream.nameField, s_activitystream.extraTypeId,
+               s_activitystream.module, concat(s_user.firstname, ' ', LTRIM(concat(IFNULL(s_user.middlename, ''), ' ')), s_user.lastname) as createdUserFullName,
+               s_user.avatarId AS createdUserAvatarId,
+               s_activitystream.extraTypeId AS projectId, m_prj_project.name AS projectName, m_prj_project.shortname AS projectShortName,
+               m_audit_log.id AS log_id, m_audit_log.object_class AS log_object_class, m_audit_log.posteddate AS log_posteddate, m_audit_log.posteduser AS log_posteduser, 
+               m_audit_log.sAccountId AS log_sAccountId, m_audit_log.type AS log_type, m_audit_log.typeId AS log_typeid, m_audit_log.module AS log_module,
+               m_audit_log.changeset AS log_changeset
+        FROM s_activitystream
+        LEFT OUTER JOIN m_tracker_bug ON (s_activitystream.typeId=m_tracker_bug.id)
+        LEFT OUTER JOIN s_user ON (s_user.username = s_activitystream.createdUser)
+        LEFT OUTER JOIN m_prj_project ON (m_prj_project.id=s_activitystream.extraTypeId)
+        LEFT OUTER JOIN m_audit_log ON (s_activitystream.id=m_audit_log.activityLogId)
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="com.mycollab.common.dao.ActivityStreamMapperExt.querySearchCriteria" />
+                AND s_activitystream.type = 'Project-Bug'
+                AND s_activitystream.action != 'comment'
+            #end
+        #end)
+        UNION(
+        SELECT s_activitystream.id, s_activitystream.sAccountId, s_activitystream.type, s_activitystream.typeId, m_tracker_bug.bugkey AS itemKey, 
+               s_activitystream.createdTime, s_activitystream.action, s_activitystream.createdUser, m_tracker_bug.name AS nameField, s_activitystream.extraTypeId,
+               s_activitystream.module, concat(s_user.firstname, ' ', LTRIM(concat(IFNULL(s_user.middlename, ''), ' ')), s_user.lastname) as createdUserFullName,
+               s_user.avatarId AS createdUserAvatarId, s_activitystream.extraTypeId AS projectId, m_prj_project.name AS projectName, m_prj_project.shortname AS projectShortName,
+               NULL AS log_id, NULL AS log_object_class, NULL AS log_posteddate, NULL AS log_posteduser, 
+               NULL AS log_sAccountId, NULL AS log_type, NULL AS log_typeid, NULL AS log_module, 
+               s_activitystream.nameField AS log_changeset
+        FROM s_activitystream
+        LEFT OUTER JOIN m_tracker_bug ON (s_activitystream.typeId=m_tracker_bug.id)
+        LEFT OUTER JOIN s_user ON (s_user.username = s_activitystream.createdUser)
+        LEFT OUTER JOIN m_prj_project ON (m_prj_project.id=s_activitystream.extraTypeId)
+         #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="com.mycollab.common.dao.ActivityStreamMapperExt.querySearchCriteria" />
+                AND s_activitystream.type = 'Project-Bug'
+                AND s_activitystream.action = 'comment'
+            #end
+        #end
+        )
+        UNION
+        (SELECT s_activitystream.id, s_activitystream.sAccountId, s_activitystream.type, s_activitystream.typeId, m_prj_task.taskkey AS itemKey, 
+               s_activitystream.createdTime, s_activitystream.action, s_activitystream.createdUser, s_activitystream.nameField, s_activitystream.extraTypeId,
+               s_activitystream.module, concat(s_user.firstname, ' ', LTRIM(concat(IFNULL(s_user.middlename, ''), ' ')), s_user.lastname) as createdUserFullName,
+               s_user.avatarId AS createdUserAvatarId,
+               s_activitystream.extraTypeId AS projectId, m_prj_project.name AS projectName, m_prj_project.shortname AS projectShortName,
+               m_audit_log.id AS log_id, m_audit_log.object_class AS log_object_class, m_audit_log.posteddate AS log_posteddate, m_audit_log.posteduser AS log_posteduser, 
+               m_audit_log.sAccountId AS log_sAccountId, m_audit_log.type AS log_type, m_audit_log.typeId AS log_typeid, m_audit_log.module AS log_module,
+               m_audit_log.changeset AS log_changeset
+        FROM s_activitystream
+        LEFT OUTER JOIN m_prj_task ON (s_activitystream.typeId=m_prj_task.id)
+        LEFT OUTER JOIN s_user ON (s_user.username = s_activitystream.createdUser)
+        LEFT OUTER JOIN m_prj_project ON (m_prj_project.id=s_activitystream.extraTypeId)
+        LEFT OUTER JOIN m_audit_log ON (s_activitystream.id=m_audit_log.activityLogId)
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="com.mycollab.common.dao.ActivityStreamMapperExt.querySearchCriteria" />
+                AND s_activitystream.type = 'Project-Task'
+                AND s_activitystream.action != 'comment'
+            #end
+        #end)
+        UNION
+        (SELECT s_activitystream.id, s_activitystream.sAccountId, s_activitystream.type, s_activitystream.typeId, m_prj_task.taskkey AS itemKey, 
+               s_activitystream.createdTime, s_activitystream.action, s_activitystream.createdUser, m_prj_task.name AS nameField, s_activitystream.extraTypeId,
+               s_activitystream.module, concat(s_user.firstname, ' ', LTRIM(concat(IFNULL(s_user.middlename, ''), ' ')), s_user.lastname) as createdUserFullName,
+               s_user.avatarId AS createdUserAvatarId,
+               s_activitystream.extraTypeId AS projectId, m_prj_project.name AS projectName, m_prj_project.shortname AS projectShortName,
+               NULL AS log_id, NULL AS log_object_class, NULL AS log_posteddate, NULL AS log_posteduser, 
+               NULL AS log_sAccountId, NULL AS log_type, NULL AS log_typeid, NULL AS log_module, 
+               s_activitystream.nameField AS log_changeset
+        FROM s_activitystream
+        LEFT OUTER JOIN m_prj_task ON (s_activitystream.typeId=m_prj_task.id)
+        LEFT OUTER JOIN s_user ON (s_user.username = s_activitystream.createdUser)
+        LEFT OUTER JOIN m_prj_project ON (m_prj_project.id=s_activitystream.extraTypeId)
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="com.mycollab.common.dao.ActivityStreamMapperExt.querySearchCriteria" />
+                AND s_activitystream.type = 'Project-Task'
+                AND s_activitystream.action = 'comment'
+            #end
+        #end
+        )
+        UNION
+        (SELECT s_activitystream.id, s_activitystream.sAccountId, s_activitystream.type, s_activitystream.typeId, null AS itemKey,
+               s_activitystream.createdTime, s_activitystream.action, s_activitystream.createdUser, s_activitystream.nameField, s_activitystream.extraTypeId,
+               s_activitystream.module, concat(s_user.firstname, ' ', LTRIM(concat(IFNULL(s_user.middlename, ''), ' ')), s_user.lastname) as createdUserFullName,
+               s_user.avatarId AS createdUserAvatarId,
+               s_activitystream.extraTypeId AS projectId, m_prj_project.name AS projectName, m_prj_project.shortname AS projectShortName,
+               m_audit_log.id AS log_id, m_audit_log.object_class AS log_object_class, m_audit_log.posteddate AS log_posteddate, m_audit_log.posteduser AS log_posteduser, 
+               m_audit_log.sAccountId AS log_sAccountId, m_audit_log.type AS log_type, m_audit_log.typeId AS log_typeid, m_audit_log.module AS log_module,
+               m_audit_log.changeset AS log_changeset
+        FROM s_activitystream
+        LEFT OUTER JOIN s_user ON (s_user.username = s_activitystream.createdUser)
+        LEFT OUTER JOIN m_prj_project ON (m_prj_project.id=s_activitystream.extraTypeId)
+        LEFT OUTER JOIN m_audit_log ON (s_activitystream.id=m_audit_log.activityLogId)
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="com.mycollab.common.dao.ActivityStreamMapperExt.querySearchCriteria" />
+                AND s_activitystream.type NOT IN ('Project-Task', 'Project-Bug')
+                AND s_activitystream.action != 'comment'
+            #end
+        #end)
+        UNION
+        (
+        SELECT s_activitystream.id, s_activitystream.sAccountId, s_activitystream.type, s_activitystream.typeId, null AS itemKey,
+               s_activitystream.createdTime, s_activitystream.action, s_activitystream.createdUser, m_prj_message.title AS nameField, s_activitystream.extraTypeId,
+               s_activitystream.module, concat(s_user.firstname, ' ', LTRIM(concat(IFNULL(s_user.middlename, ''), ' ')), s_user.lastname) as createdUserFullName,
+               s_user.avatarId AS createdUserAvatarId,
+               s_activitystream.extraTypeId AS projectId, m_prj_project.name AS projectName, m_prj_project.shortname AS projectShortName,
+               NULL AS log_id, NULL AS log_object_class, NULL AS log_posteddate, NULL AS log_posteduser, 
+               NULL AS log_sAccountId, NULL AS log_type, NULL AS log_typeid, NULL AS log_module, 
+               s_activitystream.nameField AS log_changeset
+        FROM s_activitystream
+        LEFT OUTER JOIN m_prj_message ON (s_activitystream.typeId=m_prj_message.id)
+        LEFT OUTER JOIN s_user ON (s_user.username = s_activitystream.createdUser)
+        LEFT OUTER JOIN m_prj_project ON (m_prj_project.id=s_activitystream.extraTypeId)
+        LEFT OUTER JOIN m_audit_log ON (s_activitystream.id=m_audit_log.activityLogId)
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="com.mycollab.common.dao.ActivityStreamMapperExt.querySearchCriteria" />
+                AND s_activitystream.type = 'Project-Message'
+                AND s_activitystream.action = 'comment'
+            #end
+        #end
+        )
+        UNION
+        (
+        SELECT s_activitystream.id, s_activitystream.sAccountId, s_activitystream.type, s_activitystream.typeId, null AS itemKey,
+          s_activitystream.createdTime, s_activitystream.action, s_activitystream.createdUser,
+          m_tracker_component.name AS nameField, s_activitystream.extraTypeId, s_activitystream.module,
+          concat(s_user.firstname, ' ', LTRIM(concat(IFNULL(s_user.middlename, ''), ' ')), s_user.lastname) as createdUserFullName,
+          s_user.avatarId AS createdUserAvatarId,
+          s_activitystream.extraTypeId AS projectId, m_prj_project.name AS projectName,
+          m_prj_project.shortname AS projectShortName,
+          NULL AS log_id, NULL AS log_object_class, NULL AS log_posteddate, NULL AS log_posteduser,
+          NULL AS log_sAccountId, NULL AS log_type, NULL AS log_typeid, NULL AS log_module,
+          s_activitystream.nameField AS log_changeset
+        FROM s_activitystream
+        LEFT OUTER JOIN m_tracker_component ON (s_activitystream.typeId=m_tracker_component.id)
+        LEFT OUTER JOIN s_user ON (s_user.username = s_activitystream.createdUser)
+        LEFT OUTER JOIN m_prj_project ON (m_prj_project.id=s_activitystream.extraTypeId)
+        LEFT OUTER JOIN m_audit_log ON (s_activitystream.id=m_audit_log.activityLogId)
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="com.mycollab.common.dao.ActivityStreamMapperExt.querySearchCriteria" />
+                AND s_activitystream.type = 'Project-Component'
+                AND s_activitystream.action = 'comment'
+            #end
+        #end
+        )
+        UNION
+        (
+        SELECT s_activitystream.id, s_activitystream.sAccountId, s_activitystream.type, s_activitystream.typeId, null AS itemKey,
+          s_activitystream.createdTime, s_activitystream.action, s_activitystream.createdUser,
+          m_tracker_version.name AS nameField, s_activitystream.extraTypeId,
+          s_activitystream.module, concat(s_user.firstname, ' ', LTRIM(concat(IFNULL(s_user.middlename, ''), ' ')), s_user.lastname) as createdUserFullName,
+          s_user.avatarId AS createdUserAvatarId, s_activitystream.extraTypeId AS projectId,
+          m_prj_project.name AS projectName, m_prj_project.shortname AS projectShortName,
+          NULL AS log_id, NULL AS log_object_class, NULL AS log_posteddate, NULL AS log_posteduser,
+          NULL AS log_sAccountId, NULL AS log_type, NULL AS log_typeid, NULL AS log_module,
+          s_activitystream.nameField AS log_changeset
+        FROM s_activitystream
+          LEFT OUTER JOIN m_tracker_version ON (s_activitystream.typeId=m_tracker_version.id)
+          LEFT OUTER JOIN s_user ON (s_user.username = s_activitystream.createdUser)
+          LEFT OUTER JOIN m_prj_project ON (m_prj_project.id=s_activitystream.extraTypeId)
+          LEFT OUTER JOIN m_audit_log ON (s_activitystream.id=m_audit_log.activityLogId)
+        #ifnotnull($_parameter.searchCriteria)
+          #trimext("WHERE" "AND|OR")
+            <include refid="com.mycollab.common.dao.ActivityStreamMapperExt.querySearchCriteria" />
+              AND s_activitystream.type = 'Project-Version'
+              AND s_activitystream.action = 'comment'
+          #end
+        #end
+        )
+        UNION
+        (
+        SELECT s_activitystream.id, s_activitystream.sAccountId, s_activitystream.type, s_activitystream.typeId, null AS itemKey,
+               s_activitystream.createdTime, s_activitystream.action, s_activitystream.createdUser, m_prj_risk.name AS nameField, s_activitystream.extraTypeId,
+               s_activitystream.module, concat(s_user.firstname, ' ', LTRIM(concat(IFNULL(s_user.middlename, ''), ' ')), s_user.lastname) as createdUserFullName,
+               s_user.avatarId AS createdUserAvatarId,
+               s_activitystream.extraTypeId AS projectId, m_prj_project.name AS projectName, m_prj_project.shortname AS projectShortName,
+               NULL AS log_id, NULL AS log_object_class, NULL AS log_posteddate, NULL AS log_posteduser, 
+               NULL AS log_sAccountId, NULL AS log_type, NULL AS log_typeid, NULL AS log_module, 
+               s_activitystream.nameField AS log_changeset
+        FROM s_activitystream
+        LEFT OUTER JOIN m_prj_risk ON (s_activitystream.typeId=m_prj_risk.id)
+        LEFT OUTER JOIN s_user ON (s_user.username = s_activitystream.createdUser)
+        LEFT OUTER JOIN m_prj_project ON (m_prj_project.id=s_activitystream.extraTypeId)
+        LEFT OUTER JOIN m_audit_log ON (s_activitystream.id=m_audit_log.activityLogId)
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="com.mycollab.common.dao.ActivityStreamMapperExt.querySearchCriteria" />
+                AND s_activitystream.type = 'Project-Risk'
+                AND s_activitystream.action = 'comment'
+            #end
+        #end
+        )
+        UNION
+        (
+        SELECT s_activitystream.id, s_activitystream.sAccountId, s_activitystream.type, s_activitystream.typeId, null AS itemKey,
+               s_activitystream.createdTime, s_activitystream.action, s_activitystream.createdUser, NULL AS nameField, s_activitystream.extraTypeId,
+               s_activitystream.module, concat(s_user.firstname, ' ', LTRIM(concat(IFNULL(s_user.middlename, ''), ' ')), s_user.lastname) as createdUserFullName,
+               s_user.avatarId AS createdUserAvatarId,
+               s_activitystream.extraTypeId AS projectId, m_prj_project.name AS projectName, m_prj_project.shortname AS projectShortName,
+               NULL AS log_id, NULL AS log_object_class, NULL AS log_posteddate, NULL AS log_posteduser, 
+               NULL AS log_sAccountId, NULL AS log_type, NULL AS log_typeid, NULL AS log_module, 
+               s_activitystream.nameField AS log_changeset
+        FROM s_activitystream
+        LEFT OUTER JOIN s_user ON (s_user.username = s_activitystream.createdUser)
+        LEFT OUTER JOIN m_prj_project ON (m_prj_project.id=s_activitystream.extraTypeId)
+        LEFT OUTER JOIN m_audit_log ON (s_activitystream.id=m_audit_log.activityLogId)
+        #ifnotnull($_parameter.searchCriteria)
+            #trimext("WHERE" "AND|OR")
+                <include refid="com.mycollab.common.dao.ActivityStreamMapperExt.querySearchCriteria" />
+                AND s_activitystream.type = 'Project-Page'
+                AND s_activitystream.action = 'comment'
+            #end
+        #end
+        )
+        ORDER BY
+        #ifnotnull($_parameter.searchCriteria.orderFields)
+            #repeat(${_parameter.searchCriteria.orderFields} $orderField "" "" "")
+                ${orderField.field} ${orderField.direction},
+            #end
+        #end
+        createdTime DESC
+    </select>
+
+    <select id="getTotalActivityStream" resultType="int" parameterType="ActivityStreamSearchCriteria" lang="velocity">
+        SELECT count(*) as totalCount
+        FROM s_activitystream
+        #ifnotnull($_parameter.searchCriteria)
+          #trimext("WHERE" "AND|OR")
+            <include refid="com.mycollab.common.dao.ActivityStreamMapperExt.querySearchCriteria" />
+          #end
+        #end
+    </select>
+
+    <select id="getAccountInfoOfProject" resultMap="com.mycollab.module.user.dao.BillingAccountMapper.BaseResultMap"
+            parameterType="java.lang.Integer" lang="velocity">
+        <![CDATA[
+        SELECT s_account.subdomain, s_account.id, s_account.logoPath
+            FROM s_account, m_prj_project
+            WHERE m_prj_project.sAccountId=s_account.id AND
+                  m_prj_project.id=@{projectId,jdbcType=NUMERIC}
+                  ]]>
+    </select>
+
+    <resultMap id="ProjectEmailRelayNotificationResult" type="com.mycollab.module.project.domain.ProjectRelayEmailNotification"
+        extends="com.mycollab.common.dao.RelayEmailNotificationMapperExt.SimpleEmailRelayNotificationResult">
+        <result column="projectId" jdbcType="INTEGER" property="projectId" />
+    </resultMap>
+
+    <select id="findProjectRelayEmailNotifications" resultMap="ProjectEmailRelayNotificationResult">
+        <![CDATA[
+        (SELECT s_relay_email_notification.id,
+        s_relay_email_notification.sAccountId,
+        s_relay_email_notification.type,
+        s_relay_email_notification.typeId,
+        s_relay_email_notification.action,
+        s_relay_email_notification.extraTypeId,
+        s_relay_email_notification.changeby,
+        s_relay_email_notification.changeComment,
+        s_account.logoPath AS accountLogo,
+        m_tracker_bug.projectId AS projectId,
+        concat(changeUser.firstname, ' ', LTRIM(IFNULL(changeUser.middlename, '')), changeUser.lastname) as changeByUserFullName,
+        notifier.firstname AS notifiers_firstname, notifier.lastname AS notifiers_lastname,
+        notifier.username AS notifiers_username, notifier.timezone AS notifiers_timezone,
+        notifier.email AS notifiers_email, notifier.language AS notifiers_language, s_relay_email_notification.sAccountId AS notifiers_accountId
+        FROM s_relay_email_notification
+            LEFT OUTER JOIN s_user AS changeUser ON (changeUser.username=s_relay_email_notification.changeby)
+            INNER JOIN m_monitor_item ON (m_monitor_item.typeId=s_relay_email_notification.typeId AND s_relay_email_notification.type=m_monitor_item.type)
+            INNER JOIN s_user AS notifier ON (m_monitor_item.user=notifier.username)
+            INNER JOIN m_tracker_bug ON  (s_relay_email_notification.type="Project-Bug" AND m_tracker_bug.id=s_relay_email_notification.typeId)
+            INNER JOIN s_account ON (s_relay_email_notification.sAccountId=s_account.id))
+        UNION
+        (SELECT s_relay_email_notification.id,
+        s_relay_email_notification.sAccountId,
+        s_relay_email_notification.type,
+        s_relay_email_notification.typeId,
+        s_relay_email_notification.action,
+        s_relay_email_notification.extraTypeId,
+        s_relay_email_notification.changeby,
+        s_relay_email_notification.changeComment,
+        s_account.logoPath AS accountLogo,
+        m_prj_task.projectId AS projectId,
+        concat(changeUser.firstname, ' ', LTRIM(IFNULL(changeUser.middlename, '')), changeUser.lastname) as changeByUserFullName,
+        notifier.firstname AS notifiers_firstname, notifier.lastname AS notifiers_lastname,
+        notifier.username AS notifiers_username, notifier.timezone AS notifiers_timezone,
+        notifier.email AS notifiers_email, notifier.language AS notifiers_language, s_relay_email_notification.sAccountId AS notifiers_accountId
+        FROM s_relay_email_notification
+            LEFT OUTER JOIN s_user AS changeUser ON (changeUser.username=s_relay_email_notification.changeby)
+            INNER JOIN m_monitor_item ON (m_monitor_item.typeId=s_relay_email_notification.typeId AND s_relay_email_notification.type=m_monitor_item.type)
+            INNER JOIN s_user AS notifier ON (m_monitor_item.user=notifier.username)
+            INNER JOIN m_prj_task ON (s_relay_email_notification.type="Project-Task" AND m_prj_task.id=s_relay_email_notification.typeId)
+            INNER JOIN s_account ON (s_relay_email_notification.sAccountId=s_account.id))
+        UNION
+        (SELECT s_relay_email_notification.id,
+        s_relay_email_notification.sAccountId,
+        s_relay_email_notification.type,
+        s_relay_email_notification.typeId,
+        s_relay_email_notification.action,
+        s_relay_email_notification.extraTypeId,
+        s_relay_email_notification.changeby,
+        s_relay_email_notification.changeComment,
+        s_account.logoPath AS accountLogo,
+        m_prj_message.projectId AS projectId,
+        concat(changeUser.firstname, ' ', LTRIM(IFNULL(changeUser.middlename, '')), changeUser.lastname) as changeByUserFullName,
+        NULL AS notifiers_firstname, NULL AS notifiers_lastname, NULL AS notifiers_username,
+        NULL AS notifiers_timezone, NULL AS notifiers_email,  NULL AS notifiers_language,
+        NULL AS notifiers_accountId
+        FROM s_relay_email_notification
+            LEFT OUTER JOIN s_user AS changeUser ON (changeUser.username=s_relay_email_notification.changeby)
+            INNER JOIN m_prj_message ON (s_relay_email_notification.type="Project-Message" AND m_prj_message.id=s_relay_email_notification.typeId)
+            INNER JOIN s_account ON (s_relay_email_notification.sAccountId=s_account.id))
+        UNION
+        (SELECT s_relay_email_notification.id,
+        s_relay_email_notification.sAccountId,
+        s_relay_email_notification.type,
+        s_relay_email_notification.typeId,
+        s_relay_email_notification.action,
+        s_relay_email_notification.extraTypeId,
+        s_relay_email_notification.changeby,
+        s_relay_email_notification.changeComment,
+        s_account.logoPath AS accountLogo,
+        m_prj_milestone.projectId AS projectId,
+        concat(changeUser.firstname, ' ', LTRIM(IFNULL(changeUser.middlename, '')), changeUser.lastname) as changeByUserFullName,
+        NULL AS notifiers_firstname, NULL AS notifiers_lastname,
+        NULL AS notifiers_username, NULL AS notifiers_timezone,
+        NULL AS notifiers_email, NULL AS notifiers_language, NULL AS notifiers_accountId
+        FROM s_relay_email_notification
+            LEFT OUTER JOIN s_user AS changeUser ON (changeUser.username=s_relay_email_notification.changeby)
+            INNER JOIN m_prj_milestone ON (s_relay_email_notification.type="Project-Milestone" AND m_prj_milestone.id=s_relay_email_notification.typeId)
+            INNER JOIN s_account ON (s_relay_email_notification.sAccountId=s_account.id))
+        UNION
+        (SELECT s_relay_email_notification.id,
+        s_relay_email_notification.sAccountId,
+        s_relay_email_notification.type,
+        s_relay_email_notification.typeId,
+        s_relay_email_notification.action,
+        s_relay_email_notification.extraTypeId,
+        s_relay_email_notification.changeby,
+        s_relay_email_notification.changeComment,
+        s_account.logoPath AS accountLogo,
+        m_prj_risk.projectId AS projectId,
+        concat(changeUser.firstname, ' ', LTRIM(IFNULL(changeUser.middlename, '')), changeUser.lastname) as changeByUserFullName,
+        NULL AS notifiers_firstname, NULL AS notifiers_lastname,
+        NULL AS notifiers_username, NULL AS notifiers_timezone,
+        NULL AS notifiers_email, NULL AS notifiers_language, NULL AS notifiers_accountId
+        FROM s_relay_email_notification
+            LEFT OUTER JOIN s_user AS changeUser ON (changeUser.username=s_relay_email_notification.changeby)
+            INNER JOIN m_prj_risk ON (s_relay_email_notification.type="Project-Risk" AND m_prj_risk.id=s_relay_email_notification.typeId)
+            INNER JOIN s_account ON (s_relay_email_notification.sAccountId=s_account.id))
+        UNION
+        (SELECT s_relay_email_notification.id,
+        s_relay_email_notification.sAccountId,
+        s_relay_email_notification.type,
+        s_relay_email_notification.typeId,
+        s_relay_email_notification.action,
+        s_relay_email_notification.extraTypeId,
+        s_relay_email_notification.changeby,
+        s_relay_email_notification.changeComment,
+        s_account.logoPath AS accountLogo,
+        m_tracker_component.projectId AS projectId,
+        concat(changeUser.firstname, ' ', LTRIM(IFNULL(changeUser.middlename, '')), changeUser.lastname) as changeByUserFullName,
+        NULL AS notifiers_firstname, NULL AS notifiers_lastname, NULL AS notifiers_username,
+        NULL AS notifiers_timezone, NULL AS notifiers_email, NULL AS notifiers_language,
+        NULL AS notifiers_accountId
+        FROM s_relay_email_notification
+            LEFT OUTER JOIN s_user AS changeUser ON (changeUser.username=s_relay_email_notification.changeby)
+            INNER JOIN m_tracker_component ON (s_relay_email_notification.type="Project-Component" AND m_tracker_component.id=s_relay_email_notification.typeId)
+            INNER JOIN s_account ON (s_relay_email_notification.sAccountId=s_account.id))
+        UNION
+        (SELECT s_relay_email_notification.id,
+        s_relay_email_notification.sAccountId,
+        s_relay_email_notification.type,
+        s_relay_email_notification.typeId,
+        s_relay_email_notification.action,
+        s_relay_email_notification.extraTypeId,
+        s_relay_email_notification.changeby,
+        s_relay_email_notification.changeComment,
+        s_account.logoPath AS accountLogo,
+        m_tracker_version.projectId AS projectId,
+        concat(changeUser.firstname, ' ', LTRIM(IFNULL(changeUser.middlename, '')), changeUser.lastname) as changeByUserFullName,
+        NULL AS notifiers_firstname, NULL AS notifiers_lastname, NULL AS notifiers_username,
+        NULL AS notifiers_timezone, NULL AS notifiers_email, NULL AS notifiers_language,
+        NULL AS notifiers_accountId
+        FROM s_relay_email_notification
+            LEFT OUTER JOIN s_user AS changeUser ON (changeUser.username=s_relay_email_notification.changeby)
+            INNER JOIN m_tracker_version ON (s_relay_email_notification.type="Project-Version" AND m_tracker_version.id=s_relay_email_notification.typeId)
+            INNER JOIN s_account ON (s_relay_email_notification.sAccountId=s_account.id))
+        ]]>
+    </select>
+</mapper>

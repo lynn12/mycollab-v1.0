@@ -1,0 +1,12 @@
+<component name="ArtifactManager">
+  <artifact name="mycollab-app-community:GWT">
+    <output-path>$PROJECT_DIR$/mycollab-app-community/src/main/webapp/VAADIN/widgetsets</output-path>
+    <root id="root">
+      <element id="directory" name="VAADIN">
+        <element id="directory" name="widgetsets">
+          <element id="gwt-compiler-output" facet="mycollab-app-community/gwt/GWT" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="mycollab-app-community" target="1.8" />
+      <module name="mycollab-caching" target="1.8" />
+      <module name="mycollab-client-api" target="1.8" />
+      <module name="mycollab-config" target="1.8" />
+      <module name="mycollab-core" target="1.8" />
+      <module name="mycollab-dao" target="1.8" />
+      <module name="mycollab-deployer-community" target="1.5" />
+      <module name="mycollab-esb" target="1.8" />
+      <module name="mycollab-jackrabbit" target="1.8" />
+      <module name="mycollab-localization" target="1.8" />
+      <module name="mycollab-migration" target="1.8" />
+      <module name="mycollab-mobile" target="1.8" />
+      <module name="mycollab-parent-community" target="1.8" />
+      <module name="mycollab-reporting" target="1.8" />
+      <module name="mycollab-scheduler" target="1.8" />
+      <module name="mycollab-scheduler-community" target="1.8" />
+      <module name="mycollab-server-runner" target="1.8" />
+      <module name="mycollab-services" target="1.8" />
+      <module name="mycollab-services-community" target="1.8" />
+      <module name="mycollab-servlet" target="1.8" />
+      <module name="mycollab-test" target="1.8" />
+      <module name="mycollab-ui" target="1.8" />
+      <module name="mycollab-web" target="1.8" />
+      <module name="mycollab-web-community" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

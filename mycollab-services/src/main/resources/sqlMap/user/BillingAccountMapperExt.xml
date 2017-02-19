@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mycollab.module.user.dao.BillingAccountMapperExt">
+
+    <resultMap extends="com.mycollab.module.user.dao.BillingAccountMapper.BaseResultMap"
+        id="SimpleBillingAccountResult" type="com.mycollab.module.user.domain.SimpleBillingAccount">
+        <association property="billingPlan" resultMap="com.mycollab.module.user.dao.BillingPlanMapper.BaseResultMap"
+                     columnPrefix="plan_"/>
+    </resultMap>
+
+    <sql id="selectBillingAccount">
+        <![CDATA[
+        SELECT s_account.id, s_account.createdTime, s_account.billingPlanId, s_account.subdomain,
+            s_account.accountName, s_account.status,
+            s_account.sitename, s_account.logoPath, s_account.defaultTimezone,
+            s_account.defaultCurrencyId, s_account.defaultYYMMDDFormat, s_account.defaultMMDDFormat,
+            s_account.defaultHumanDateFormat, s_account.defaultLanguageTag,
+            s_account.logoPath, s_account.faviconPath, s_account.displayEmailPublicly,
+            s_account.trialFrom, s_account.trialTo,
+            s_billing_plan.id AS plan_id, s_billing_plan.billingType AS plan_billingType,
+            s_billing_plan.numUsers AS plan_numUsers, s_billing_plan.volume AS plan_volume,
+            s_billing_plan.numProjects AS plan_numProjects,
+            s_billing_plan.pricing AS plan_pricing, s_billing_plan.description AS plan_description,
+            s_billing_plan.shoppingUrl AS plan_shoppingUrl, s_billing_plan.bankTransferPath AS plan_bankTransferPath,
+            s_billing_plan.yearlyShoppingUrl AS plan_yearlyShoppingUrl
+        FROM s_account
+            LEFT OUTER JOIN s_billing_plan ON (s_billing_plan.id=s_account.billingPlanId)
+        ]]>
+    </sql>
+
+    <select id="getBillingAccountById" resultMap="SimpleBillingAccountResult" parameterType="java.lang.Integer">
+        <include refid="selectBillingAccount" />
+        WHERE s_account.id = #{accountId,jdbcType=NUMERIC}
+    </select>
+
+    <select id="getAccountByDomain" resultMap="SimpleBillingAccountResult" parameterType="java.lang.String">
+        <include refid="selectBillingAccount" />
+        WHERE s_account.subdomain = #{domainName}
+    </select>
+
+    <select id="getDefaultAccountByDomain" resultMap="SimpleBillingAccountResult">
+        <include refid="selectBillingAccount" />
+        LIMIT 1
+    </select>
+</mapper>
